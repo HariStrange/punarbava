@@ -8,14 +8,10 @@ interface AuthContextType {
   login: (
     username: string,
     password: string
-  ) => Promise<{ success: boolean; permit?: string; error?: string }>;
-  resetPassword: (
-    username: string,
-    oldPassword: string,
-    newPassword: string
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   isLoading: boolean;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,7 +24,7 @@ export const useAuth = () => {
   return context;
 };
 
-function decodeJWT(token: string): { role: string; exp?: number } | null {
+function decodeJWT(token: string): any {
   try {
     const payload = token.split(".")[1];
     const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
@@ -45,6 +41,18 @@ function decodeJWT(token: string): { role: string; exp?: number } | null {
   }
 }
 
+function isTokenValid(token: string): boolean {
+  try {
+    const decoded = decodeJWT(token);
+    if (!decoded || !decoded.exp) {
+      return false;
+    }
+    return decoded.exp > Math.floor(Date.now() / 1000);
+  } catch {
+    return false;
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -53,22 +61,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const token = Cookies.get("authToken");
-    if (token) {
+    if (token && isTokenValid(token)) {
       const decoded = decodeJWT(token);
-      if (
-        decoded &&
-        decoded.exp &&
-        decoded.exp > Math.floor(Date.now() / 1000)
-      ) {
-        setUser({
-          id: "1",
-          email: "user@papex.com",
-          name: "Papex User",
-          role: decoded.role?.toLowerCase() || "user",
-        });
-      } else {
-        Cookies.remove("authToken");
-      }
+      setUser({
+        id: decoded.id || decoded.userId || decoded.sub || "1",
+        email: decoded.email || decoded.username || "user@example.com",
+        name: decoded.name || decoded.username || "User",
+        role: decoded.role?.toLowerCase() || "user",
+      });
+    } else {
+      Cookies.remove("authToken");
+      setUser(null);
     }
     setIsLoading(false);
   }, []);
@@ -76,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (
     username: string,
     password: string
-  ): Promise<{ success: boolean; permit?: string; error?: string }> => {
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await axios.post("http://localhost:8081/auth/login", {
         username,
@@ -84,18 +87,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       const token = response.data.token;
-      const permit = response.data.permit;
+
+      if (!token) {
+        return {
+          success: false,
+          error: "No token received from server",
+        };
+      }
+
+      if (!isTokenValid(token)) {
+        return {
+          success: false,
+          error: "Invalid or expired token received",
+        };
+      }
 
       Cookies.set("authToken", token, { expires: 7 });
+
       const decoded = decodeJWT(token);
       setUser({
-        id: "1",
-        email: username,
-        name: "Papex User",
-        role: decoded?.role?.toLowerCase() || "user",
+        id: decoded.id || decoded.userId || decoded.sub || "1",
+        email: decoded.email || decoded.username || username,
+        name: decoded.name || decoded.username || username,
+        role: decoded.role?.toLowerCase() || "user",
       });
 
-      return { success: true, permit };
+      return { success: true };
     } catch (error: any) {
       console.error("Login error:", error.response?.data || error.message);
       return {
@@ -107,53 +124,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const resetPassword = async (
-    username: string,
-    oldPassword: string,
-    newPassword: string
-  ): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const response = await axios.post(
-        "http://localhost:8083/auth/reset-password",
-        {
-          username,
-          oldPassword,
-          newPassword,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      // Backend returns a string like "Password reset successful."
-      if (
-        response.status === 200 &&
-        response.data === "Password reset successful."
-      ) {
-        return { success: true };
-      }
-
-      return {
-        success: false,
-        error: response.data || "Unexpected response from server.",
-      };
-    } catch (error: any) {
-      console.error(
-        "Password reset error:",
-        error.response?.data || error.message
-      );
-      return {
-        success: false,
-        error:
-          typeof error.response?.data === "string"
-            ? error.response.data // e.g., "Old password is incorrect."
-            : "Password reset failed. Please try again.",
-      };
-    }
-  };
-
   const logout = () => {
     Cookies.remove("authToken");
     setUser(null);
@@ -161,7 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <AuthContext.Provider
-      value={{ user, login, resetPassword, logout, isLoading }}
+      value={{ user, login, logout, isLoading, isAuthenticated: !!user }}
     >
       {children}
     </AuthContext.Provider>

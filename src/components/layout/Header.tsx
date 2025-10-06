@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useThemeStore } from "@/store/theme";
-import { useAuthStore } from "@/store/auth";
+import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Breadcrumbs } from "./Breadcrumbs";
@@ -20,7 +20,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { theme, toggleTheme } = useThemeStore();
-  const { user, logout } = useAuthStore();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {

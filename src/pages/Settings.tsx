@@ -4,12 +4,12 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { useAuthStore } from '@/store/auth';
+import { useAuth } from '@/context/AuthContext';
 import { useThemeStore } from '@/store/theme';
 import { Sun, Moon } from 'lucide-react';
 
 export function Settings() {
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const { theme, toggleTheme } = useThemeStore();
 
   return (

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { LogIn, Loader2 } from "lucide-react";
@@ -13,12 +13,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAuthStore } from "@/store/auth";
+import { useAuth } from "@/context/AuthContext";
 
 export function Login() {
   const navigate = useNavigate();
-  const { login } = useAuthStore();
-  const [email, setEmail] = useState("");
+  const { login } = useAuth();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -27,9 +27,14 @@ export function Login() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
-      toast.success("Welcome back!");
-      navigate("/dashboard");
+      const result = await login(username, password);
+
+      if (result.success) {
+        toast.success("Welcome back!");
+        navigate("/dashboard");
+      } else {
+        toast.error(result.error || "Failed to login. Please try again.");
+      }
     } catch (error) {
       toast.error("Failed to login. Please try again.");
     } finally {
@@ -60,13 +65,13 @@ export function Login() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="username">Username</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  type="text"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                   disabled={isLoading}
                 />
@@ -94,15 +99,6 @@ export function Login() {
                 )}
               </Button>
             </form>
-            <div className="mt-4 text-center text-sm">
-              Don't have an account?{" "}
-              <Link
-                to="/signup"
-                className="text-primary hover:underline font-medium"
-              >
-                Sign up
-              </Link>
-            </div>
           </CardContent>
         </Card>
         <p className="mt-8 text-center text-xs text-muted-foreground">
