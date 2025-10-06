@@ -53,6 +53,7 @@ const navItems: NavItem[] = [
     children: [
       { title: "Admins", href: "/admin-table/admins" },
       { title: "Permissions", href: "/admin-table/permissions" },
+      { title: "Branch Manager", href: "/admin-table/branch-manager" },
     ],
   },
 ];

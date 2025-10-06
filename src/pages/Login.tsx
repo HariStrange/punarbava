@@ -53,9 +53,19 @@ export function Login() {
         <Card className="shadow-lg">
           <CardHeader className="space-y-1">
             <div className="flex items-center justify-center mb-2">
-              <div className="p-3 bg-primary/10 rounded-full">
+              {/* <div className="p-3 bg-primary/10 rounded-full">
                 <LogIn className="h-6 w-6 text-primary" />
-              </div>
+              </div> */}
+              <img
+                src="https://res.cloudinary.com/dx5lg8mei/image/upload/v1744960831/WhatsApp_Image_2025-04-17_at_17.20.51_025badf0_gm7rgc.png"
+                alt="sholasLogo"
+                className="w-25 dark:hidden"
+              />
+              <img
+                src="https://res.cloudinary.com/dx5lg8mei/image/upload/v1749030570/logo-1_obgcgx.png"
+                alt="sholasLogo"
+                className="w-25 hidden dark:block"
+              />
             </div>
             <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
             <CardDescription className="text-center">
